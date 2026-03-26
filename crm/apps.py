@@ -5,4 +5,4 @@ class CrmConfig(AppConfig):
     name = 'crm'
 
     def ready(self):
-        import crm.signals  # This "wakes up" the audit logger
+        import crm.signals 

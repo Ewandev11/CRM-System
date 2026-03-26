@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Company, Contact, ActivityLog
 from .serializers import CompanySerializer, ContactSerializer, ActivityLogSerializer
 from .permissions import RoleBasedAccessPermission
+from .signals import get_current_user # Import helper to get user
 
 class BaseMultiTenantViewSet(viewsets.ModelViewSet):
     permission_classes = [RoleBasedAccessPermission]
@@ -32,8 +33,29 @@ class BaseMultiTenantViewSet(viewsets.ModelViewSet):
         serializer.save(organization=user.organization)
 
     def perform_destroy(self, instance):
+        """
+        Soft Delete Implementation with Manual Activity Logging
+        """
+        # 1. Perform Soft Delete
         instance.is_deleted = True
         instance.save()
+        
+        # 2. Manually Create Activity Log (Since post_delete signal won't fire for soft deletes)
+        user = get_current_user() or self.request.user
+        
+        if user and hasattr(instance, 'organization'):
+            try:
+                ActivityLog.objects.create(
+                    organization=instance.organization,
+                    user=user,
+                    action="DELETE",
+                    model_name=instance.__class__.__name__,
+                    object_id=instance.id,
+                    target=str(instance)
+                )
+            except Exception as e:
+                # Log error but don't block the delete operation
+                print(f"Failed to create activity log for delete: {e}")
 
 class CompanyViewSet(BaseMultiTenantViewSet):
     queryset = Company.objects.all()

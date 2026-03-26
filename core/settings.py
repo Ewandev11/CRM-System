@@ -43,7 +43,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Custom audit logging middleware
     'crm.middleware.AuditlogMiddleware', 
 ]
 
@@ -80,7 +79,7 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'accounts.User'
 
-# --- REST Framework & JWT (Rubric Compliant) ---
+# --- REST Framework & JWT ---
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -116,11 +115,10 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME:
 else:
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# --- CORS Configuration (EXPLICIT FIX FOR NETWORK ERROR) ---
-CORS_ALLOW_ALL_ORIGINS = True  # Allow any origin (localhost:5173)
-CORS_ALLOW_CREDENTIALS = True  # Allows Auth tokens/cookies
+# --- CORS Configuration ---
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
-# Explicitly allow these headers
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
