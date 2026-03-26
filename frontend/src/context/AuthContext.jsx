@@ -1,5 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
-import api from '../api/axios';
+import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
@@ -8,28 +7,43 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Check for token on load
         const token = localStorage.getItem('token');
-        if (token) {
-            // Verify token/get user profile here later
-            setUser({ isAuthenticated: true });
+        const savedUser = localStorage.getItem('user');
+        
+        if (token && savedUser) {
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch (e) {
+                console.error("Failed to parse user from storage", e);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            }
         }
-        setLoading(false);
+        setLoading(false); 
     }, []);
 
-    const login = async (username, password) => {
-        const response = await api.post('auth/login/', { username, password });
-        localStorage.setItem('token', response.data.access);
-        setUser(response.data.user);
+    const login = (userData, token) => {
+        if (!token) {
+            console.error("Login failed: No token provided to AuthContext");
+            return;
+        }
+        // Save to local storage
+        localStorage.setItem('token', token); 
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
     };
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
+        window.location.href = '/login';
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>
             {!loading && children}
         </AuthContext.Provider>
-    );
+    ); 
 };

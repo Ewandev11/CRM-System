@@ -1,9 +1,11 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axios'; 
 
 const LoginPage = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
+    const [loginError, setLoginError] = useState("");
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
 
@@ -13,43 +15,69 @@ const LoginPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoginError("");
         try {
-            await login(credentials.username, credentials.password);
-            navigate('/dashboard'); // Go to dashboard on success
+            // Calls http://127.0.0.1:8000/api/v1/auth/login/
+            const res = await api.post('/auth/login/', {
+                username: credentials.username,
+                password: credentials.password
+            });
+
+            const token = res.data.access || res.data.token;
+            const userData = res.data.user || { username: credentials.username };
+
+            login(userData, token);
+            navigate('/dashboard');
         } catch (error) {
-            alert("Login Failed: Check your credentials or Backend connection");
+            setLoginError("Invalid username or password");
+            console.error("Login Error:", error);
+            
+            // Debugging: Log the full error to see if it's CORS or 404
+            if (error.response) {
+                console.log("Response Data:", error.response.data);
+                console.log("Status:", error.response.status);
+            } else if (error.request) {
+                console.log("No response received (Network/CORS issue):", error.request);
+            }
         }
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }}>
-            <form onSubmit={handleSubmit} style={{ border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
-                <h2>CRM Login</h2>
-                <div style={{ marginBottom: '10px' }}>
+        <div style={containerStyle}>
+            <div style={cardStyle}>
+                <h2 style={{ color: '#fff', marginBottom: '30px' }}>CRM Login</h2>
+                {loginError && <div style={errorStyle}>{loginError}</div>}
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <input 
-                        name="username" 
-                        placeholder="Username" 
-                        onChange={handleChange} 
-                        style={{ width: '100%', padding: '8px' }}
-                        required 
+                        name="username"
+                        type="text"
+                        placeholder="Username"
+                        value={credentials.username}
+                        onChange={handleChange}
+                        style={inputStyle}
+                        required
                     />
-                </div>
-                <div style={{ marginBottom: '10px' }}>
                     <input 
-                        name="password" 
-                        type="password" 
-                        placeholder="Password" 
-                        onChange={handleChange} 
-                        style={{ width: '100%', padding: '8px' }}
-                        required 
+                        name="password"
+                        type="password"
+                        placeholder="Password"
+                        value={credentials.password}
+                        onChange={handleChange}
+                        style={inputStyle}
+                        required
                     />
-                </div>
-                <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none' }}>
-                    Log In
-                </button>
-            </form>
+                    <button type="submit" style={buttonStyle}>Log In</button>
+                </form>
+            </div>
         </div>
     );
 };
+
+// Styles
+const containerStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#121212' };
+const cardStyle = { padding: '40px', borderRadius: '12px', backgroundColor: '#1e1e1e', width: '100%', maxWidth: '400px', textAlign: 'center', border: '1px solid #333' };
+const inputStyle = { padding: '12px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2d2d2d', color: '#fff' };
+const buttonStyle = { padding: '12px', borderRadius: '6px', border: 'none', backgroundColor: '#007bff', color: '#fff', fontWeight: 'bold', cursor: 'pointer' };
+const errorStyle = { color: '#ff4d4d', marginBottom: '15px', fontSize: '14px' };
 
 export default LoginPage;

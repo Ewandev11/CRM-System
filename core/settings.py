@@ -22,7 +22,7 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'rest_framework',
-    'django_filters', # Added for advanced filtering
+    'django_filters', 
     'corsheaders',
     'storages',
     'rest_framework_simplejwt',
@@ -35,7 +35,7 @@ INSTALLED_APPS = [
 
 # --- Middleware ---
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -88,7 +88,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    # Added Filter Backends for Search/Filter requirements
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -103,7 +102,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# --- AWS S3 (Rubric: No Hardcoded Credentials) ---
+# --- AWS S3 ---
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default=None)
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default=None)
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default=None)
@@ -113,12 +112,27 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
-    AWS_QUERYSTRING_AUTH = True  # Strategy: Secure Signed URLs
+    AWS_QUERYSTRING_AUTH = True
 else:
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# --- CORS & Static ---
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+# --- CORS Configuration (EXPLICIT FIX FOR NETWORK ERROR) ---
+CORS_ALLOW_ALL_ORIGINS = True  # Allow any origin (localhost:5173)
+CORS_ALLOW_CREDENTIALS = True  # Allows Auth tokens/cookies
+
+# Explicitly allow these headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'

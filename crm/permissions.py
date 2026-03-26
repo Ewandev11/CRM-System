@@ -2,33 +2,42 @@ from rest_framework import permissions
 
 class RoleBasedAccessPermission(permissions.BasePermission):
     """
-    Custom permission to enforce exam RBAC rules:
+    Custom permission to enforce RBAC rules:
     - Admin: Full access (including DELETE)
     - Manager: Read, Create, Update (No DELETE)
     - Staff: Read, Create (No UPDATE or DELETE)
     """
     
     def has_permission(self, request, view):
-        # Must be authenticated
         if not request.user or not request.user.is_authenticated:
             return False
-            
-        # Everyone authenticated can list/retrieve (GET)
+        
         if request.method in permissions.SAFE_METHODS:
             return True
-            
-        role = getattr(request.user, 'role', 'STAFF') # Default to lowest permission
         
-        # DELETE operations
+        role = getattr(request.user, 'role', 'Staff')
+        
         if request.method == 'DELETE':
-            return role == 'ADMIN'
-            
-        # UPDATE operations (PUT, PATCH)
+            return role == 'Admin'
+        
         if request.method in ['PUT', 'PATCH']:
-            return role in ['ADMIN', 'MANAGER']
-            
-        # CREATE operations (POST)
+            return role in ['Admin', 'Manager']
+        
         if request.method == 'POST':
-            return role in ['ADMIN', 'MANAGER', 'STAFF']
-            
+            return role in ['Admin', 'Manager', 'Staff']
+        
+        return False
+    
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        role = getattr(request.user, 'role', 'Staff')
+        
+        if request.method in ['PUT', 'PATCH']:
+            return role in ['Admin', 'Manager']
+        
+        if request.method == 'DELETE':
+            return role == 'Admin'
+        
         return False
